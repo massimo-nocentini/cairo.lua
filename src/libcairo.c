@@ -8,45 +8,97 @@
 #include <lauxlib.h>
 #include <time.h>
 #include <math.h>
-#include <pango-1.0/pango/pangocairo.h>
+#include <pango/pangocairo.h>
+#include <fontconfig/fontconfig.h>
+#include <cairo/cairo.h>
+
+#define RADIUS 150
+#define N_WORDS 10
+#define FONT "Ubuntu 12"
 
 int l_write(lua_State *L)
 {
+    // cairo_t *cr = (cairo_t *)lua_touserdata(L, 1);
+    const char *text = lua_tostring(L, 2);
+    int show = lua_toboolean(L, 3);
 
-    cairo_surface_t *surf = (cairo_surface_t *)lua_touserdata(L, 1);
-    cairo_t *cr = (cairo_t *)lua_touserdata(L, 2);
-    const char *text = lua_tostring(L, 3);
+    // assert(cr != NULL);
 
-    assert(cr != NULL);
+    // FcBool fontAddStatus = FcConfigAppFontAddDir(FcConfigGetCurrent(), "/usr/share/fonts/truetype/ubuntu/");
 
-    PangoLayout *layout;        // layout for a paragraph of text
-    PangoFontDescription *desc; // this structure stores a description of the style of font you'd most like
+    PangoLayout *layout;
+    PangoFontDescription *desc;
 
-    cairo_translate(cr, 10, 20);                               // set the origin of cairo instance 'cr' to (10,20) (i.e. this is where
-                                                               // drawing will start from).
-    layout = pango_cairo_create_layout(cr);                    // init pango layout ready for use
-    pango_layout_set_text(layout, text, -1);                   // sets the text to be associated with the layout (final arg is length, -1
-                                                               // to calculate automatically when passing a nul-terminated string)
-    desc = pango_font_description_from_string("Sans Bold 12"); // specify the font that would be ideal for your particular use
-    pango_layout_set_font_description(layout, desc);           // assign the previous font description to the layout
-    pango_font_description_free(desc);                         // free the description
+    cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 200, 200);
+    cairo_t *cr = cairo_create(s);
 
-    // cairo_set_source_rgb(cr, 0.0, 0.0, 1.0);                // set the colour to blue
-    pango_cairo_update_layout(cr, layout); // if the target surface or transformation properties of the cairo instance
-                                           // have changed, update the pango layout to reflect this
-    pango_cairo_show_layout(cr, layout);   // draw the pango layout onto the cairo surface
+    /* Center coordinates on the middle of the region we are drawing */
+    // cairo_translate(cr, RADIUS, RADIUS);
 
-    //g_object_unref(layout); // free the layout
+    /* Create a PangoLayout, set the font and text */
+    layout = pango_cairo_create_layout(cr);
+    // PangoFontMap *map = PANGO_CAIRO_FONT_MAP(pango_cairo_font_map_new());
+    // PangoContext *ctx = pango_cairo_font_map_create_context(map);
+    // layout = pango_layout_new(ctx);
 
-    free (layout);
+    pango_layout_set_markup(layout, text, -1);
+    desc = pango_font_description_from_string(FONT);
+    pango_layout_set_font_description(layout, desc);
 
-    cairo_surface_write_to_png(surf, "a.png");
+    /* Inform Pango to re-layout the text with the new transformation */
+    pango_cairo_update_layout(cr, layout);
 
-    return 0;
+    int width, height, baseline;
+
+    pango_layout_get_size(layout, &width, &height);
+    baseline = pango_layout_get_baseline(layout);
+
+    double tw = ((double)-width) / (PANGO_SCALE * 2.0);
+    double th = ((double)-(height)) / (PANGO_SCALE * 2.0);
+
+    if (show)
+    {
+        // cairo_translate(cr, tw, th);
+
+        pango_cairo_show_layout(cr, layout);
+
+        // cairo_translate(cr, -tw, -th);
+    }
+
+    pango_font_description_free(desc);
+    // g_object_unref(desc);
+    // desc = NULL;
+
+
+    
+
+    /* free the layout object */
+    g_object_unref(layout);
+    layout = NULL;
+
+    cairo_surface_destroy(s);
+
+    lua_pushnumber(L, width / (double)PANGO_SCALE);
+    lua_pushnumber(L, height / (double)PANGO_SCALE);
+    lua_pushnumber(L, baseline / (double)PANGO_SCALE);
+
+    return 3;
+}
+
+int l_pango_cairo_create_layout(lua_State *L)
+{
+
+    cairo_t *cr = (cairo_t *)lua_touserdata(L, 1);
+    PangoLayout *layout = pango_cairo_create_layout(cr);
+
+    lua_pushlightuserdata(L, layout);
+
+    return 1;
 }
 
 static const struct luaL_Reg libcairo[] = {
     {"write", l_write},
+    {"pango_cairo_create_layout", l_pango_cairo_create_layout},
     {NULL, NULL} /* sentinel */
 };
 
