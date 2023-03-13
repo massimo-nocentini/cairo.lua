@@ -10,7 +10,7 @@
 #include <math.h>
 #include <pango/pangocairo.h>
 #include <fontconfig/fontconfig.h>
-#include <cairo/cairo.h>
+#include <cairo/cairo-svg.h>
 
 #define RADIUS 150
 #define N_WORDS 10
@@ -29,7 +29,9 @@ int l_write(lua_State *L)
     PangoLayout *layout;
     PangoFontDescription *desc;
 
-    cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 200, 200);
+    // cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 200, 200);
+    cairo_surface_t *s = cairo_svg_surface_create("tmp.svg", 200, 200);
+    
     cairo_t *cr = cairo_create(s);
 
     /* Center coordinates on the middle of the region we are drawing */
@@ -69,7 +71,7 @@ int l_write(lua_State *L)
     // g_object_unref(desc);
     // desc = NULL;
 
-
+    cairo_surface_flush(s);
     
 
     /* free the layout object */
