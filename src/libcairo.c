@@ -9,6 +9,7 @@
 #include <time.h>
 #include <math.h>
 #include <pango/pangocairo.h>
+#include <pango/pangoft2.h>
 #include <fontconfig/fontconfig.h>
 #include <cairo/cairo.h>
 
@@ -145,6 +146,14 @@ int l_pango_font_map_create_context(lua_State *L)
     return 1;
 }
 
+int l_pango_cairo_font_map_new(lua_State *L)
+{
+    PangoFontMap *map = pango_cairo_font_map_new();
+    lua_pushlightuserdata(L, map);
+
+    return 1;
+}
+
 int l_pango_cairo_font_map_get_default(lua_State *L)
 {
     PangoFontMap *map = pango_cairo_font_map_get_default();
@@ -170,7 +179,7 @@ int l_dummy_test(lua_State *L)
     PangoFontMap *map = pango_cairo_font_map_get_default();
     PangoContext *ctx = pango_font_map_create_context(map);
     PangoLayout *layout = pango_layout_new(ctx);
-    PangoFontDescription *desc = pango_font_description_from_string(FONT);
+    PangoFontDescription *desc = pango_font_description_from_string("Lucida Grande 12");
 
     pango_layout_set_font_description(layout, desc);
     pango_layout_set_markup(layout, markup, -1);
@@ -180,10 +189,9 @@ int l_dummy_test(lua_State *L)
     pango_layout_get_extents(layout, NULL, &rect);
 
     pango_font_description_free(desc);
-    
+
     g_object_unref(layout);
     g_object_unref(ctx);
-    //g_object_unref(map);
 
     lua_pushnumber(L, (lua_Number)rect.x / PANGO_SCALE);
     lua_pushnumber(L, (lua_Number)rect.y / PANGO_SCALE);
@@ -193,10 +201,9 @@ int l_dummy_test(lua_State *L)
     return 4;
 }
 
-
 int l_dummy_layout(lua_State *L)
 {
-    PangoContext *ctx = (PangoContext *) lua_touserdata (L, 1);
+    PangoContext *ctx = (PangoContext *)lua_touserdata(L, 1);
     const char *markup = lua_tostring(L, 2);
 
     PangoLayout *layout = pango_layout_new(ctx);
@@ -210,9 +217,9 @@ int l_dummy_layout(lua_State *L)
     pango_layout_get_extents(layout, NULL, &rect);
 
     pango_font_description_free(desc);
-    
+
     g_object_unref(layout);
-    
+
     lua_pushnumber(L, (lua_Number)rect.x / PANGO_SCALE);
     lua_pushnumber(L, (lua_Number)rect.y / PANGO_SCALE);
     lua_pushnumber(L, (lua_Number)rect.width / PANGO_SCALE);
@@ -255,6 +262,7 @@ static const struct luaL_Reg libcairo[] = {
     {"g_object_unref", l_g_object_unref},
     {"pango_is_layout", l_pango_is_layout},
     {"pango_cairo_font_map_get_default", l_pango_cairo_font_map_get_default},
+    {"pango_cairo_font_map_new", l_pango_cairo_font_map_new},
     {"pango_layout_new", l_pango_layout_new},
     {"dummy_test", l_dummy_test},
     {"dummy_layout", l_dummy_layout},
