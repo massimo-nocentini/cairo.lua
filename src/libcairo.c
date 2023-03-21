@@ -128,6 +128,8 @@ int l_pango_cairo_create_layout(lua_State *L)
     cairo_t *cr = (cairo_t *)lua_touserdata(L, 1);
     PangoLayout *layout = pango_cairo_create_layout(cr);
 
+    assert(PANGO_IS_LAYOUT(layout));
+
     lua_pushlightuserdata(L, layout);
 
     return 1;
@@ -145,7 +147,7 @@ int l_pango_font_map_create_context(lua_State *L)
 
 int l_pango_cairo_font_map_get_default(lua_State *L)
 {
-    PangoFontMap *map = pango_cairo_font_map_new();
+    PangoFontMap *map = pango_cairo_font_map_get_default();
     lua_pushlightuserdata(L, map);
 
     return 1;
@@ -163,15 +165,60 @@ int l_pango_layout_new(lua_State *L)
 
 int l_dummy_test(lua_State *L)
 {
+    const char *markup = lua_tostring(L, 1);
+
     PangoFontMap *map = pango_cairo_font_map_get_default();
     PangoContext *ctx = pango_font_map_create_context(map);
     PangoLayout *layout = pango_layout_new(ctx);
+    PangoFontDescription *desc = pango_font_description_from_string(FONT);
 
-    g_clear_object(&layout);
-    g_clear_object(&ctx);
-    g_clear_object(&map);
+    pango_layout_set_font_description(layout, desc);
+    pango_layout_set_markup(layout, markup, -1);
 
-    return 0;
+    PangoRectangle rect;
+
+    pango_layout_get_extents(layout, NULL, &rect);
+
+    pango_font_description_free(desc);
+    
+    g_object_unref(layout);
+    g_object_unref(ctx);
+    //g_object_unref(map);
+
+    lua_pushnumber(L, (lua_Number)rect.x / PANGO_SCALE);
+    lua_pushnumber(L, (lua_Number)rect.y / PANGO_SCALE);
+    lua_pushnumber(L, (lua_Number)rect.width / PANGO_SCALE);
+    lua_pushnumber(L, (lua_Number)rect.height / PANGO_SCALE);
+
+    return 4;
+}
+
+
+int l_dummy_layout(lua_State *L)
+{
+    PangoContext *ctx = (PangoContext *) lua_touserdata (L, 1);
+    const char *markup = lua_tostring(L, 2);
+
+    PangoLayout *layout = pango_layout_new(ctx);
+    PangoFontDescription *desc = pango_font_description_from_string(FONT);
+
+    pango_layout_set_font_description(layout, desc);
+    pango_layout_set_markup(layout, markup, -1);
+
+    PangoRectangle rect;
+
+    pango_layout_get_extents(layout, NULL, &rect);
+
+    pango_font_description_free(desc);
+    
+    g_object_unref(layout);
+    
+    lua_pushnumber(L, (lua_Number)rect.x / PANGO_SCALE);
+    lua_pushnumber(L, (lua_Number)rect.y / PANGO_SCALE);
+    lua_pushnumber(L, (lua_Number)rect.width / PANGO_SCALE);
+    lua_pushnumber(L, (lua_Number)rect.height / PANGO_SCALE);
+
+    return 4;
 }
 
 int l_pango_layout_with_default_font_map(lua_State *L)
@@ -210,6 +257,7 @@ static const struct luaL_Reg libcairo[] = {
     {"pango_cairo_font_map_get_default", l_pango_cairo_font_map_get_default},
     {"pango_layout_new", l_pango_layout_new},
     {"dummy_test", l_dummy_test},
+    {"dummy_layout", l_dummy_layout},
     {"pango_font_map_create_context", l_pango_font_map_create_context},
     {NULL, NULL} /* sentinel */
 };
