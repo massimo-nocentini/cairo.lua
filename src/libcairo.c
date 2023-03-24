@@ -179,19 +179,18 @@ int l_dummy_test(lua_State *L)
     PangoFontMap *map = pango_cairo_font_map_get_default();
     PangoContext *ctx = pango_font_map_create_context(map);
     PangoLayout *layout = pango_layout_new(ctx);
-    PangoFontDescription *desc = pango_font_description_from_string("Lucida Grande 12");
+    // PangoFontDescription *desc = pango_font_description_from_string("Lucida Grande 12");
 
-    pango_layout_set_font_description(layout, desc);
+    // pango_layout_set_font_description(layout, desc);
     pango_layout_set_markup(layout, markup, -1);
 
     PangoRectangle rect;
 
     pango_layout_get_extents(layout, NULL, &rect);
 
-    pango_font_description_free(desc);
-
-    g_object_unref(layout);
+    // pango_font_description_free(desc);
     g_object_unref(ctx);
+    g_object_unref(layout);
 
     lua_pushnumber(L, (lua_Number)rect.x / PANGO_SCALE);
     lua_pushnumber(L, (lua_Number)rect.y / PANGO_SCALE);
@@ -254,6 +253,27 @@ int l_g_object_unref(lua_State *L)
     return 0;
 }
 
+int l_pango_layout_get_extents(lua_State *L)
+{
+    PangoLayout *layout = (PangoLayout *)lua_touserdata(L, 1);
+    int logical = lua_toboolean(L, 2);
+
+    PangoRectangle rect;
+
+    if (logical)
+        pango_layout_get_pixel_extents(layout, NULL, &rect);
+    else
+        pango_layout_get_pixel_extents(layout, &rect, NULL);
+
+    lua_pushnumber(L, pango_units_to_double(pango_layout_get_baseline(layout)));
+    lua_pushnumber(L, (rect.x));
+    lua_pushnumber(L, (rect.y));
+    lua_pushnumber(L, (rect.width));
+    lua_pushnumber(L, (rect.height));
+
+    return 5;
+}
+
 static const struct luaL_Reg libcairo[] = {
     {"write", l_write},
     {"pango_cairo_create_layout", l_pango_cairo_create_layout},
@@ -267,6 +287,7 @@ static const struct luaL_Reg libcairo[] = {
     {"dummy_test", l_dummy_test},
     {"dummy_layout", l_dummy_layout},
     {"pango_font_map_create_context", l_pango_font_map_create_context},
+    {"pango_layout_get_extents", l_pango_layout_get_extents},
     {NULL, NULL} /* sentinel */
 };
 

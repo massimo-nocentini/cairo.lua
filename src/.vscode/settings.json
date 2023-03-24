@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "pango-layout.h": "c",
+        "pango-font.h": "c"
+    }
+}
