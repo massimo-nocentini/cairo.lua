@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "pangocairo.h": "c",
+        "pango.h": "c",
+        "pango-layout.h": "c"
+    }
+}

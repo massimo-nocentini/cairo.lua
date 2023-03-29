@@ -274,6 +274,27 @@ int l_pango_layout_get_extents(lua_State *L)
     return 5;
 }
 
+int l_pango_attr_list_from_string(lua_State *L)
+{
+    const char *spec = lua_tostring(L, 1);
+
+    PangoAttrList *attributes = pango_attr_list_from_string(spec);
+    pango_attr_list_ref(attributes);
+
+    lua_pushlightuserdata(L, attributes);
+
+    return 1;
+}
+
+int l_pango_attr_list_unref(lua_State *L)
+{
+    PangoAttrList *attributes = (PangoAttrList *)lua_touserdata(L, 1);
+
+    pango_attr_list_unref(attributes);
+
+    return 0;
+}
+
 static const struct luaL_Reg libcairo[] = {
     {"write", l_write},
     {"pango_cairo_create_layout", l_pango_cairo_create_layout},
@@ -288,6 +309,8 @@ static const struct luaL_Reg libcairo[] = {
     {"dummy_layout", l_dummy_layout},
     {"pango_font_map_create_context", l_pango_font_map_create_context},
     {"pango_layout_get_extents", l_pango_layout_get_extents},
+    {"pango_attr_list_from_string", l_pango_attr_list_from_string},
+    {"pango_attr_list_unref", l_pango_attr_list_unref},
     {NULL, NULL} /* sentinel */
 };
 
