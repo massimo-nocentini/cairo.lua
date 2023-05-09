@@ -2,6 +2,8 @@
     "files.associations": {
         "pangocairo.h": "c",
         "pango.h": "c",
-        "pango-layout.h": "c"
+        "pango-layout.h": "c",
+        "pango-attributes.h": "c",
+        "pango-markup.h": "c"
     }
 }

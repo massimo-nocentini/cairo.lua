@@ -295,6 +295,58 @@ int l_pango_attr_list_unref(lua_State *L)
     return 0;
 }
 
+void translate_pango_attribute(gpointer data, gpointer user_data)
+{
+
+    PangoAttribute *attr = (PangoAttribute *)data;
+    int s = *((int *)user_data);
+
+    attr->start_index += s;
+    attr->end_index += s;
+
+    printf("%d %d %d\n", s, attr->start_index, attr->end_index);
+}
+
+int l_pango_parse_markup(lua_State *L)
+{
+    const char *markup_text = lua_tostring(L, 1);
+    int start = lua_tointeger(L, 2);
+
+    char *text;
+    PangoAttrList *attr_list;
+
+    gboolean res = pango_parse_markup(markup_text, -1, 0, &attr_list, &text, NULL, NULL);
+
+    lua_pushboolean(L, res == TRUE);
+
+    if (res == TRUE)
+    {
+
+        GSList *list = pango_attr_list_get_attributes(attr_list);
+
+        g_slist_foreach(list, &translate_pango_attribute, &start);
+
+        char *attrlist_str = pango_attr_list_to_string(attr_list);
+
+        g_slist_free(list);
+
+        pango_attr_list_unref(attr_list);
+
+        lua_pushstring(L, attrlist_str);
+        lua_pushstring(L, text);
+
+        free(text);
+        free(attrlist_str);
+    }
+    else
+    {
+        lua_pushlightuserdata(L, NULL);
+        lua_pushstring(L, "");
+    }
+
+    return 3;
+}
+
 static const struct luaL_Reg libcairo[] = {
     {"write", l_write},
     {"pango_cairo_create_layout", l_pango_cairo_create_layout},
@@ -311,6 +363,7 @@ static const struct luaL_Reg libcairo[] = {
     {"pango_layout_get_extents", l_pango_layout_get_extents},
     {"pango_attr_list_from_string", l_pango_attr_list_from_string},
     {"pango_attr_list_unref", l_pango_attr_list_unref},
+    {"pango_parse_markup", l_pango_parse_markup},
     {NULL, NULL} /* sentinel */
 };
 
