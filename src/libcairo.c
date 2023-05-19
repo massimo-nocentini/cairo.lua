@@ -274,12 +274,33 @@ int l_pango_layout_get_extents(lua_State *L)
     return 5;
 }
 
+int l_pango_attr_list_splice(lua_State *L)
+{
+    PangoAttrList *list = (PangoAttrList *)lua_touserdata(L, 1);
+    PangoAttrList *other = (PangoAttrList *)lua_touserdata(L, 2);
+
+    PangoAttrList *join = pango_attr_list_new();
+
+    /*
+        For backwards compatibility, the function behaves differently when len is 0.
+        In this case, the attributes from other are not imited to len, and are just overlayed on top of list.
+
+        This mode is useful for merging two lists of attributes together.
+    */
+
+    pango_attr_list_splice(join, other, -1, 0);
+    pango_attr_list_splice(join, list, -1, 0);
+
+    lua_pushlightuserdata(L, join);
+
+    return 1;
+}
+
 int l_pango_attr_list_from_string(lua_State *L)
 {
     const char *spec = lua_tostring(L, 1);
 
     PangoAttrList *attributes = pango_attr_list_from_string(spec);
-    pango_attr_list_ref(attributes);
 
     lua_pushlightuserdata(L, attributes);
 
@@ -295,16 +316,23 @@ int l_pango_attr_list_unref(lua_State *L)
     return 0;
 }
 
+typedef struct
+{
+    PangoAttrList *list;
+    int start;
+} pango_attr_list_map_t;
+
 void translate_pango_attribute(gpointer data, gpointer user_data)
 {
-
     PangoAttribute *attr = (PangoAttribute *)data;
-    int s = *((int *)user_data);
+    pango_attr_list_map_t *m = (pango_attr_list_map_t *)user_data;
+
+    int s = m->start;
 
     attr->start_index += s;
     attr->end_index += s;
 
-    printf("%d %d %d\n", s, attr->start_index, attr->end_index);
+    pango_attr_list_insert(m->list, attr);
 }
 
 int l_pango_parse_markup(lua_State *L)
@@ -321,27 +349,28 @@ int l_pango_parse_markup(lua_State *L)
 
     if (res == TRUE)
     {
+        pango_attr_list_map_t m;
+        m.list = pango_attr_list_new();
+        m.start = start;
 
         GSList *list = pango_attr_list_get_attributes(attr_list);
-
-        g_slist_foreach(list, &translate_pango_attribute, &start);
-
-        char *attrlist_str = pango_attr_list_to_string(attr_list);
-
+        g_slist_foreach(list, &translate_pango_attribute, &m);
         g_slist_free(list);
 
-        pango_attr_list_unref(attr_list);
-
-        lua_pushstring(L, attrlist_str);
+        char *attrs_string = pango_attr_list_to_string(m.list);
         lua_pushstring(L, text);
+        lua_pushstring(L, attrs_string);
 
         free(text);
-        free(attrlist_str);
+        free(attrs_string);
+        
+        pango_attr_list_unref(attr_list);
+        pango_attr_list_unref(m.list);
     }
     else
     {
-        lua_pushlightuserdata(L, NULL);
-        lua_pushstring(L, "");
+        lua_pushnil(L);
+        lua_pushnil(L);
     }
 
     return 3;
@@ -364,6 +393,8 @@ static const struct luaL_Reg libcairo[] = {
     {"pango_attr_list_from_string", l_pango_attr_list_from_string},
     {"pango_attr_list_unref", l_pango_attr_list_unref},
     {"pango_parse_markup", l_pango_parse_markup},
+    {"pango_attr_list_splice", l_pango_attr_list_splice},
+
     {NULL, NULL} /* sentinel */
 };
 
