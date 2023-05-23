@@ -209,6 +209,7 @@ int l_pango_parse_markup(lua_State *L)
 {
     const char *markup_text = lua_tostring(L, 1);
     int start = lua_tointeger(L, 2);
+    PangoAttrList *empty_attr_list = (PangoAttrList *)lua_touserdata(L, 3);
 
     char *text;
     PangoAttrList *attr_list;
@@ -220,7 +221,7 @@ int l_pango_parse_markup(lua_State *L)
     if (res == TRUE)
     {
         pango_attr_list_map_t m;
-        m.list = pango_attr_list_new();
+        m.list = empty_attr_list;
         m.start = start;
         m.nel = 0;
 
@@ -236,7 +237,7 @@ int l_pango_parse_markup(lua_State *L)
         free(attrs_string);
 
         pango_attr_list_unref(attr_list);
-        pango_attr_list_unref(m.list);
+        // pango_attr_list_unref(m.list);
     }
     else
     {
