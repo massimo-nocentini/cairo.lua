@@ -232,20 +232,21 @@ int l_pango_parse_markup(lua_State *L)
         char *attrs_string = pango_attr_list_to_string(m.list);
         lua_pushstring(L, text);
         lua_pushstring(L, attrs_string);
+        lua_pushinteger(L, m.nel);
 
         free(text);
         free(attrs_string);
 
         pango_attr_list_unref(attr_list);
-        // pango_attr_list_unref(m.list);
     }
     else
     {
         lua_pushnil(L);
         lua_pushnil(L);
+        lua_pushinteger(L, 0);
     }
 
-    return 3;
+    return 4;
 }
 
 static const struct luaL_Reg libcairo[] = {
