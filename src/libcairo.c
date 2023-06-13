@@ -205,6 +205,18 @@ void translate_pango_attribute(gpointer data, gpointer user_data)
     pango_attr_list_insert(m->list, attr);
 }
 
+int l_g_markup_escape_text(lua_State *L)
+{
+    const char *str = lua_tostring(L, 1);
+    gchar *escaped = g_markup_escape_text(str, -1);
+
+    lua_pushstring(L, escaped);
+
+    g_free(escaped);
+
+    return 1;
+}
+
 int l_pango_parse_markup(lua_State *L)
 {
     const char *markup_text = lua_tostring(L, 1);
@@ -263,6 +275,7 @@ static const struct luaL_Reg libcairo[] = {
     {"pango_attr_list_unref", l_pango_attr_list_unref},
     {"pango_parse_markup", l_pango_parse_markup},
     {"pango_attr_list_splice", l_pango_attr_list_splice},
+    {"g_markup_escape_text", l_g_markup_escape_text},
 
     {NULL, NULL} /* sentinel */
 };
