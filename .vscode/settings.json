@@ -5,6 +5,7 @@
         "pango-layout.h": "c",
         "pango-attributes.h": "c",
         "pango-markup.h": "c",
-        "poppler.h": "c"
+        "poppler.h": "c",
+        "poppler-document.h": "c"
     }
 }

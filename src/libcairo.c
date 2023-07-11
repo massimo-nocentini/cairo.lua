@@ -262,65 +262,18 @@ int l_pango_parse_markup(lua_State *L)
     return 4;
 }
 
-int l_poppler_document_new_from_file(lua_State *L)
+int l_poppler_page_get_size(lua_State *L)
 {
-    cairo_t *cr = lua_isnil(L, 1) ? NULL : (cairo_t *)lua_touserdata(L, 1);
-    const char *absolute = lua_tostring(L, 2);
-    int page_num = lua_isinteger(L, 3) ? lua_tointeger(L, 3) : 1;
-    int show = lua_isboolean(L, 4) ? lua_toboolean(L, 4) : 0;
+    PopplerPage *page = (PopplerPage *)lua_touserdata(L, 1);
 
-    PopplerDocument *document;
-    PopplerPage *page;
-    double width, height;
-    GError *error;
-    int num_pages;
-
-    char *uri = g_filename_to_uri(absolute, NULL, &error);
-    if (uri == NULL)
-    {
-        luaL_error(L, error->message);
-    }
-
-    
-    document = poppler_document_new_from_file(uri, NULL, &error);
-    printf("--------------URI: %s\n", uri);
-
-    if (document == NULL)
-    {
-        luaL_error(L, error->message);
-    }
-
-    num_pages = poppler_document_get_n_pages(document);
-    if (page_num < 1 || page_num > num_pages)
-    {
-        luaL_error(L, "page must be between 1 and %d.", num_pages);
-    }
-
-    page = poppler_document_get_page(document, page_num - 1);
-    if (page == NULL)
-    {
-        luaL_error(L, "poppler fail: page not found.");
-    }
+    lua_Number width, height;
 
     poppler_page_get_size(page, &width, &height);
 
-    if (show)
-    {
-        cairo_save(cr);
-        poppler_page_render(page, cr);
-        cairo_restore(cr);
-    }
-
-    g_free(uri);
-    // g_object_unref(page);
-    // g_object_unref(document);
-
     lua_pushnumber(L, width);
     lua_pushnumber(L, height);
-    lua_pushlightuserdata (L, page);
-    lua_pushlightuserdata (L, document);
 
-    return 4;
+    return 2;
 }
 
 static const struct luaL_Reg libcairo[] = {
@@ -338,7 +291,7 @@ static const struct luaL_Reg libcairo[] = {
     {"pango_parse_markup", l_pango_parse_markup},
     {"pango_attr_list_splice", l_pango_attr_list_splice},
     {"g_markup_escape_text", l_g_markup_escape_text},
-    {"poppler_document_new_from_file", l_poppler_document_new_from_file},
+    {"poppler_page_get_size", l_poppler_page_get_size},
 
     {NULL, NULL} /* sentinel */
 };
